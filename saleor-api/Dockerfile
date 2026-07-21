@@ -52,4 +52,4 @@ USER saleor
 
 EXPOSE 8000
 
-CMD ["gunicorn", "--bind", ":8000", "--workers", "4", "--worker-class", "saleor.asgi.gunicorn_worker.UvicornWorker", "saleor.asgi:application"]
+CMD ["sh", "-c", "until python manage.py migrate --noinput; do echo 'Waiting for PostgreSQL...'; sleep 5; done; exec gunicorn --bind :8000 --workers 4 --worker-class saleor.asgi.gunicorn_worker.UvicornWorker saleor.asgi:application"]
