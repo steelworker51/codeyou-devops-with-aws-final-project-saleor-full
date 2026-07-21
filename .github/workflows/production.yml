@@ -29,8 +29,8 @@ jobs:
           pip install ruff pip-audit poetry==1.8.4 poetry-plugin-export
 
       - name: Run Ruff
-        continue-on-error: true
         working-directory: saleor-api
+        continue-on-error: true
         run: ruff check .
 
       - name: Export dependencies
@@ -42,20 +42,20 @@ jobs:
             --output requirements-audit.txt
 
       - name: Run dependency audit
-        continue-on-error: true
         working-directory: saleor-api
+        continue-on-error: true
         run: pip-audit -r requirements-audit.txt
 
       - name: Build production image
         run: |
           docker build \
-            -t "$IMAGE_NAME:$IMAGE_TAG" \
+            -t $IMAGE_NAME:$IMAGE_TAG \
             ./saleor-api
 
       - name: Scan production image with Trivy
         uses: aquasecurity/trivy-action@v0.36.0
         with:
-          image-ref: charlie1979/saleor-api:production
+          image-ref: ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
           format: table
           exit-code: "0"
           ignore-unfixed: true
@@ -63,10 +63,13 @@ jobs:
           severity: CRITICAL,HIGH
 
       - name: Start application with Docker Compose
-        if: always()
-        run: docker compose ps
+        run: docker compose up -d
+
+      - name: Wait for services
+        run: sleep 60
 
       - name: Show running containers
+        if: always()
         run: docker compose ps
 
       - name: Test Saleor API
@@ -76,7 +79,7 @@ jobs:
 
       - name: Show container logs
         if: always()
-        run: docker compose logs --no-color
+        run: docker compose logs
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
@@ -85,7 +88,7 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Push production image
-        run: docker push "$IMAGE_NAME:$IMAGE_TAG"
+        run: docker push $IMAGE_NAME:$IMAGE_TAG
 
       - name: Stop application
         if: always()
