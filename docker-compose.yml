@@ -78,10 +78,16 @@ services:
     networks:
       - saleor-backend-tier
     healthcheck:
-      test: ["CMD-SHELL", "wget -q --spider http://localhost:80/ || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+    test:
+      - CMD-SHELL
+      - >
+        python -c "import urllib.request;
+        urllib.request.urlopen('http://localhost:8000/graphql/', timeout=5)"
+        || exit 1
+  interval: 15s
+  timeout: 10s
+  retries: 20
+  start_period: 180s
 
   mailpit:
     image: axllent/mailpit
